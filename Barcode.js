@@ -1,37 +1,21 @@
-/*
- * A smart barcode scanner for react-native apps
- * https://github.com/react-native-component/react-native-smart-barcode/
- * Released under the MIT license
- * Copyright (c) 2016 react-native-component <moonsunfall@aliyun.com>
+/**
+ * 二维码扫描组件
  */
-
-
-import React, {
-    PropTypes,
-    Component,
-} from 'react'
-import {
-    View,
-    requireNativeComponent,
-    NativeModules,
-    AppState,
-    Platform,
-} from 'react-native'
-
-const BarcodeManager = Platform.OS == 'ios' ? NativeModules.Barcode : NativeModules.CaptureModule
-
+import React, { Component } from 'react';
+import { View, requireNativeComponent, NativeModules, AppState, Platform } from 'react-native';
+import PropTypes from 'prop-types';
+const BarcodeManager = Platform.OS == 'ios' ? NativeModules.RCTBarcode : NativeModules.CaptureModule;
 
 export default class Barcode extends Component {
-
     static defaultProps = {
         barCodeTypes: Object.values(BarcodeManager.barCodeTypes),
         scannerRectWidth: 255,
         scannerRectHeight: 255,
         scannerRectTop: 0,
         scannerRectLeft: 0,
-        scannerLineInterval: 3000,
-        scannerRectCornerColor: `#09BB0D`,
-    }
+        scannerLineInterval: 1500,
+        scannerRectCornerColor: '#357BFB'
+    };
 
     static propTypes = {
         ...View.propTypes,
@@ -42,40 +26,35 @@ export default class Barcode extends Component {
         scannerRectTop: PropTypes.number,
         scannerRectLeft: PropTypes.number,
         scannerLineInterval: PropTypes.number,
-        scannerRectCornerColor: PropTypes.string,
-    }
+        scannerRectCornerColor: PropTypes.string
+    };
 
     render() {
-        return (
-            <NativeBarCode
-                {...this.props}
-            />
-        )
+        return <NativeBarCode {...this.props} />;
     }
 
     componentDidMount() {
-        AppState.addEventListener('change', this._handleAppStateChange);
+        this.changeListener = AppState.addEventListener('change', this._handleAppStateChange);
     }
     componentWillUnmount() {
-        AppState.removeEventListener('change', this._handleAppStateChange);
+        this.changeListener && this.changeListener.remove();
     }
 
     startScan() {
-        BarcodeManager.startSession()
+        BarcodeManager.startSession();
     }
 
     stopScan() {
-        BarcodeManager.stopSession()
+        BarcodeManager.stopSession();
     }
 
-    _handleAppStateChange = (currentAppState) => {
-        if(currentAppState !== 'active' ) {
-            this.stopScan()
+    _handleAppStateChange = currentAppState => {
+        if (currentAppState !== 'active') {
+            this.stopScan();
+        } else {
+            this.startScan();
         }
-        else {
-            this.startScan()
-        }
-    }
+    };
 }
 
-const NativeBarCode = requireNativeComponent(Platform.OS == 'ios' ? 'RCTBarcode' : 'CaptureView', Barcode)
+const NativeBarCode = requireNativeComponent(Platform.OS === 'ios' ? 'RCTBarcode' : 'CaptureView', Barcode);

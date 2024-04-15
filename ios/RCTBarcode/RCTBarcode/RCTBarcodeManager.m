@@ -10,6 +10,11 @@
 
 @implementation RCTBarcodeManager
 
++ (BOOL)requiresMainQueueSetup
+{
+    return YES;
+}
+
 RCT_EXPORT_MODULE(RCTBarcode)
 
 RCT_EXPORT_VIEW_PROPERTY(scannerRectWidth, NSInteger)
@@ -120,6 +125,10 @@ RCT_EXPORT_METHOD(startSession) {
             AVCaptureMetadataOutput *metadataOutput = [[AVCaptureMetadataOutput alloc] init];
             self.metadataOutput = metadataOutput;
         
+            if(self.session.inputs.count <= 0){
+                return ;
+            }
+            
             if ([self.session canAddOutput:self.metadataOutput]) {
                 [self.metadataOutput setMetadataObjectsDelegate:self queue:self.sessionQueue];
                 [self.session addOutput:self.metadataOutput];
@@ -254,12 +263,21 @@ RCT_EXPORT_METHOD(stopSession) {
                 AudioServicesPlaySystemSound(self.beep_sound_id);
                 
 //                NSLog(@"type = %@, data = %@", metadata.type, metadata.stringValue);
-                self.barcode.onBarCodeRead(@{
-                                              @"data": @{
-                                                        @"type": metadata.type,
-                                                        @"code": metadata.stringValue,
-                                              },
-                                            });
+                if ([metadata.stringValue isKindOfClass:[NSNull class]] || [metadata.stringValue isEqual:[NSNull null]] || metadata.stringValue == nil) {
+                    self.barcode.onBarCodeRead(@{
+                                                  @"data": @{
+                                                            @"type": metadata.type,
+                                                            @"code": @"",
+                                                  },
+                                                });
+                }else{
+                    self.barcode.onBarCodeRead(@{
+                                                  @"data": @{
+                                                            @"type": metadata.type,
+                                                            @"code": metadata.stringValue,
+                                                  },
+                                                });
+                }
             }
         }
     }
